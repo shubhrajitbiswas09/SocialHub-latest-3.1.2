@@ -2113,6 +2113,22 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
         _activeNotification.value = null
     }
 
+    fun triggerStoryLikeNotification(likerName: String, likerHandle: String, storyCaption: String) {
+        val displayCaption = if (storyCaption.length > 20) storyCaption.take(17) + "..." else storyCaption
+        showNotification(
+            title = "Story Liked! ❤️",
+            message = "$likerName (@$likerHandle) liked your story \"$displayCaption\""
+        )
+    }
+
+    fun triggerUserLikedStoryNotification(creatorName: String, creatorHandle: String, storyCaption: String) {
+        val displayCaption = if (storyCaption.length > 20) storyCaption.take(17) + "..." else storyCaption
+        showNotification(
+            title = "Liked Story 💖",
+            message = "You liked @$creatorHandle's story \"$displayCaption\""
+        )
+    }
+
     // --- Trending Topics (Offline Local Search Insights) ---
     private val _trendingTopics = MutableStateFlow<List<String>>(listOf(
         "#PromptEng", "#CyberpunkArt", "#SpatialComputing", "#LofiMusic", "#WebTelemetry", "#AI_Creators"

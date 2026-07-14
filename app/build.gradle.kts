@@ -101,7 +101,7 @@ dependencies {
   implementation(libs.firebase.crashlytics)
   implementation(libs.firebase.analytics)
   implementation(libs.play.services.auth)
-  implementation(libs.play.billing)
+  // implementation(libs.play.billing)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.logging.interceptor)

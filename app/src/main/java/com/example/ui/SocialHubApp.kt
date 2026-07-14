@@ -392,8 +392,6 @@ fun SocialHubApp(viewModel: SocialHubViewModel) {
     val bannerSyncStatus by viewModel.bannerSyncStatus.collectAsStateWithLifecycle()
     val externalBannersState by viewModel.externalBannersState.collectAsStateWithLifecycle()
     val isNetworkAvailable by viewModel.isNetworkAvailable.collectAsStateWithLifecycle()
-    val billingConnected by viewModel.billingConnectionState.collectAsStateWithLifecycle()
-    val billingProducts by viewModel.playBillingProducts.collectAsStateWithLifecycle()
 
     val isLagWatchdogEnabled by viewModel.isLagWatchdogEnabled.collectAsStateWithLifecycle()
     val isLaggingOrHanging by viewModel.isLaggingOrHanging.collectAsStateWithLifecycle()
@@ -18393,7 +18391,8 @@ fun SnapPlaybackOverlay(
     snaps: List<CreatorSnap>,
     initialSnap: CreatorSnap,
     subscriptions: List<Subscription>,
-    onLikeToggle: () -> Unit,
+    likedSnapIds: List<String> = emptyList(),
+    onLikeToggle: (CreatorSnap, Boolean) -> Unit,
     onVisitProfile: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -18415,9 +18414,17 @@ fun SnapPlaybackOverlay(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ObsidianDark)
+                .background(Color.Black.copy(alpha = 0.92f))
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(9f / 16f)
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(ObsidianDark)
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
+            ) {
                 if (isLocked) {
                     Column(
                         modifier = Modifier
@@ -18467,7 +18474,7 @@ fun SnapPlaybackOverlay(
 
                     var progress by remember(currentIndex, activeMediaIndex) { mutableStateOf(0f) }
                     var isPlayActive by remember { mutableStateOf(true) }
-                    var isLikedLocal by remember(currentIndex) { mutableStateOf(false) }
+                    var isLikedLocal by remember(currentIndex, likedSnapIds.size) { mutableStateOf(likedSnapIds.contains(currentSnap.id)) }
                     var likesLocal by remember(currentIndex) { mutableStateOf(currentSnap.likesCount) }
 
                     LaunchedEffect(isPlayActive, currentIndex, activeMediaIndex) {
@@ -18899,7 +18906,7 @@ fun SnapPlaybackOverlay(
                                     .clickable {
                                         isLikedLocal = !isLikedLocal
                                         likesLocal += if (isLikedLocal) 1 else -1
-                                        onLikeToggle()
+                                        onLikeToggle(currentSnap, isLikedLocal)
                                     }
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
@@ -19420,8 +19427,6 @@ fun NotificationCenterDialog(
     val chatAlerts by viewModel.chatAlertsEnabled.collectAsStateWithLifecycle()
     val watchdogStatus by viewModel.watchdogStatus.collectAsStateWithLifecycle()
 
-    val billingConnected by viewModel.billingConnectionState.collectAsStateWithLifecycle()
-    val billingProducts by viewModel.playBillingProducts.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     var activeTab by remember { mutableStateOf(0) } // 0: Notifications, 1: Settings
@@ -19834,133 +19839,7 @@ fun NotificationCenterDialog(
                             }
                         }
 
-                        Text(
-                            text = "GOOGLE PLAY BILLING v7.0+",
-                            color = RazorBlue,
-                            fontWeight = FontWeight.Black,
-                            fontSize = 12.sp,
-                            letterSpacing = 0.5.sp,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
 
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.03f)),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, Color.White.copy(0.05f))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = "Billing Client Connection",
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp
-                                        )
-                                        Text(
-                                            text = if (billingConnected) "Active & Connected" else "Standby / Standalone Mode",
-                                            color = if (billingConnected) RazorTeal else Color.Gray,
-                                            fontSize = 11.sp,
-                                            modifier = Modifier.padding(top = 2.dp)
-                                        )
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .clip(CircleShape)
-                                            .background(if (billingConnected) RazorTeal else Color.Gray)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(14.dp))
-                                HorizontalDivider(color = Color.White.copy(0.06f))
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Button(
-                                        onClick = {
-                                            viewModel.playBillingManager.queryAvailableProducts()
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = RazorBlue),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Query Products", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                                    }
-
-                                    Spacer(modifier = Modifier.width(10.dp))
-
-                                    Button(
-                                        onClick = {
-                                            viewModel.playBillingManager.restorePurchases { purchases ->
-                                                viewModel.logSecurityEvent("💳 Restored ${purchases.size} active Google Play purchases.")
-                                            }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(0.06f)),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Restore Purchases", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    }
-                                }
-
-                                if (billingProducts.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    Text(
-                                        text = "Query Results (${billingProducts.size} items found):",
-                                        color = Color.White.copy(0.6f),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    billingProducts.forEach { product ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 4.dp)
-                                                .background(Color.White.copy(0.02f), RoundedCornerShape(6.dp))
-                                                .clickable {
-                                                    val act = context as? android.app.Activity
-                                                    if (act != null) {
-                                                        viewModel.playBillingManager.launchBillingFlow(act, product)
-                                                    }
-                                                }
-                                                .padding(8.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Column {
-                                                Text(product.name, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                Text(product.productId, color = Color.Gray, fontSize = 9.sp)
-                                            }
-                                            Text(
-                                                text = "Purchase",
-                                                color = RazorTeal,
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Text(
-                                        text = "Note: Active product queries rely on live Google Play services. Click 'Query Products' to fetch available items.",
-                                        color = Color.White.copy(0.4f),
-                                        fontSize = 10.sp,
-                                        lineHeight = 13.sp
-                                    )
-                                }
-                            }
-                        }
 
                         Spacer(modifier = Modifier.height(30.dp))
                     }
@@ -20124,9 +20003,6 @@ fun SettingsScreen(
     }
 
     val context = androidx.compose.ui.platform.LocalContext.current
-
-    val billingConnected by viewModel.billingConnectionState.collectAsStateWithLifecycle()
-    val billingProducts by viewModel.playBillingProducts.collectAsStateWithLifecycle()
 
     var cameraStatus by remember {
         mutableStateOf(

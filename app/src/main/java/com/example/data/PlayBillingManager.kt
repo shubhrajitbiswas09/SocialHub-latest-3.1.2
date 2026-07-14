@@ -2,8 +2,6 @@ package com.example.data
 
 import android.content.Context
 import android.util.Log
-import com.android.billingclient.api.Purchase
-import com.android.billingclient.api.ProductDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -15,9 +13,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Modern, fully bypassed offline mock service for Google Play Billing.
- * Keeps standard type signatures to preserve compile stability but operates entirely
- * offline to render the app secure, harmless, and cost-free.
+ * Clean mock stubs for Google Play Billing types to eliminate external compile-time dependency
+ * and keep the app size incredibly lightweight and secure.
+ */
+class Purchase(val products: List<String>, val purchaseState: Int)
+class ProductDetails(val name: String, val productId: String)
+
+/**
+ * Modern, offline-only stub manager for Play Billing.
+ * Removes dependencies, protects the app against payment hijacking, and operates strictly in
+ * secure offline sandboxed mode.
  */
 class PlayBillingManager(
     private val context: Context,
@@ -25,7 +30,6 @@ class PlayBillingManager(
 ) {
     private val TAG = "PlayBillingManager"
 
-    // Backing flows for Reactive UI state matching
     private val _billingConnectionState = MutableStateFlow(false)
     val billingConnectionState: StateFlow<Boolean> = _billingConnectionState.asStateFlow()
 
@@ -39,11 +43,11 @@ class PlayBillingManager(
     val billingError: SharedFlow<String> = _billingError.asSharedFlow()
 
     init {
-        Log.i(TAG, "PlayBillingManager initialized in BYPASS mode. No connections will be opened.")
+        Log.i(TAG, "PlayBillingManager initialized in pure, dependency-free offline mode.")
     }
 
     fun startBillingConnection() {
-        Log.d(TAG, "Billing system bypassed. Offline mode active.")
+        Log.d(TAG, "Billing system fully bypassed.")
         _billingConnectionState.value = false
     }
 
@@ -52,7 +56,7 @@ class PlayBillingManager(
     }
 
     fun launchBillingFlow(activity: android.app.Activity, productDetails: ProductDetails, selectedOfferToken: String? = null) {
-        Log.w(TAG, "Billing flow launch requested but blocked. Payments are disabled.")
+        Log.w(TAG, "Billing flow blocked. Payments are disabled.")
         externalScope.launch {
             _billingError.emit("Payments are disabled in this build.")
         }
