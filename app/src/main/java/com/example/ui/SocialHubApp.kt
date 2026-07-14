@@ -18,6 +18,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -1961,7 +1963,7 @@ fun FeedScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Default.Feed,
+                                    imageVector = Icons.AutoMirrored.Filled.Feed,
                                     contentDescription = "Creators feed mode",
                                     tint = if (isGridView) Color.White else GrayText,
                                     modifier = Modifier.size(16.dp)
@@ -2608,7 +2610,7 @@ fun NewPostDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = onDismiss) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
                                 tint = Color.White
                             )
@@ -3967,7 +3969,7 @@ fun PostCard(
                                 .background(Color.Black.copy(alpha = 0.6f), CircleShape)
                         ) {
                             Icon(
-                                imageVector = if (isMutedInline) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                imageVector = if (isMutedInline) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                                 contentDescription = "Speaker Toggle Corner",
                                 tint = if (isMutedInline) Color.Red else RazorTeal,
                                 modifier = Modifier.size(16.dp)
@@ -4700,7 +4702,7 @@ fun VideoPlayerControls(
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
-                                imageVector = if (isMutedInline) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                imageVector = if (isMutedInline) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                                 contentDescription = "Mute Inline",
                                 tint = if (isMutedInline) Color.Red else RazorTeal,
                                 modifier = Modifier.size(16.dp)
@@ -4725,7 +4727,7 @@ fun VideoPlayerControls(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Launch,
+                                    imageVector = Icons.AutoMirrored.Filled.Launch,
                                     contentDescription = "Full Screen",
                                     tint = RazorTeal,
                                     modifier = Modifier.size(14.dp)
@@ -5066,7 +5068,7 @@ fun CreativeStudioDialog(onDismiss: () -> Unit, onPublish: (String, String?) -> 
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { currentStep = 0 }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                     
                     Row(
@@ -5330,7 +5332,7 @@ fun CreativeStudioDialog(onDismiss: () -> Unit, onPublish: (String, String?) -> 
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { currentStep = 1 }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back icon", tint = Color.White)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back icon", tint = Color.White)
                     }
 
                     Text(
@@ -5544,7 +5546,7 @@ fun CreativeStudioDialog(onDismiss: () -> Unit, onPublish: (String, String?) -> 
                                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(Icons.Default.VolumeUp, null, tint = RazorBlue, modifier = Modifier.size(12.dp))
+                                            Icon(Icons.AutoMirrored.Filled.VolumeUp, null, tint = RazorBlue, modifier = Modifier.size(12.dp))
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text("SOUND ON", color = RazorBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                         }
@@ -7307,7 +7309,7 @@ fun ChatScreen(
                     onClick = { activeThreadRecipient = null },
                     modifier = Modifier.testTag("chat_back_btn")
                 ) {
-                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                 }
                 
                 Spacer(modifier = Modifier.width(4.dp))
@@ -7529,12 +7531,12 @@ fun ChatScreen(
                         val prefix = contentDisclosed.substringBefore(": ")
                         val fileName = contentDisclosed.substringAfter(": ")
                         val (icon, tint, desc) = when (prefix) {
-                            "📄 Document" -> Triple(Icons.Default.InsertDriveFile, Color(0xFF42A5F5), "PDF Document • 2.4 MB")
+                            "📄 Document" -> Triple(Icons.AutoMirrored.Filled.InsertDriveFile, Color(0xFF42A5F5), "PDF Document • 2.4 MB")
                             "📁 Folder" -> Triple(Icons.Default.Folder, Color(0xFFFFCA28), "Compressed Folder • 12.8 MB")
                             "🖼️ Image" -> Triple(Icons.Default.Image, Color(0xFFEC407A), "JPEG Image • 1.6 MB")
                             "🎥 Video" -> Triple(Icons.Default.Movie, Color(0xFFAB47BC), "MPEG-4 Video • 10.4 MB")
                             "🎵 Audio" -> Triple(Icons.Default.MusicNote, Color(0xFF26A69A), "MP3 Audio • 4.1 MB")
-                            else -> Triple(Icons.Default.InsertDriveFile, Color.Gray, "Attachment File")
+                            else -> Triple(Icons.AutoMirrored.Filled.InsertDriveFile, Color.Gray, "Attachment File")
                         }
 
                         val alignment = if (isMe) Alignment.End else Alignment.Start
@@ -7802,7 +7804,7 @@ fun ChatScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Send,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Send message",
                         tint = if (inputMessage.isNotBlank()) Color.Black else Color.Gray,
                         modifier = Modifier.size(18.dp)
@@ -7838,7 +7840,7 @@ fun ChatScreen(
                     )
                     
                     val attachmentOptions = listOf(
-                        Quadruple("Document / File", Icons.Default.InsertDriveFile, Color(0xFF42A5F5), "📄 Document: Project_Report_Final.pdf"),
+                        Quadruple("Document / File", Icons.AutoMirrored.Filled.InsertDriveFile, Color(0xFF42A5F5), "📄 Document: Project_Report_Final.pdf"),
                         Quadruple("Folder", Icons.Default.Folder, Color(0xFFFFCA28), "📁 Folder: Design_Resources_v3"),
                         Quadruple("Gallery / Image", Icons.Default.Image, Color(0xFFEC407A), "🖼️ Image: photo_capture.jpg"),
                         Quadruple("Video", Icons.Default.Movie, Color(0xFFAB47BC), "🎥 Video: recording_draft.mp4"),
@@ -9268,7 +9270,7 @@ fun WalletScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(imageVector = Icons.Default.OpenInNew, contentDescription = null, tint = RazorBlue, modifier = Modifier.size(14.dp))
+                        Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = RazorBlue, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Open OS System Settings", color = RazorBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
@@ -9430,7 +9432,7 @@ fun WalletScreen(
                         .size(36.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         tint = Color.White,
                         modifier = Modifier.size(18.dp)
@@ -9595,7 +9597,7 @@ fun WalletScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Analytics ", color = RazorTeal, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Icon(imageVector = Icons.Default.TrendingUp, contentDescription = null, tint = RazorTeal, modifier = Modifier.size(16.dp))
+                    Icon(imageVector = Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = RazorTeal, modifier = Modifier.size(16.dp))
                 }
             }
         }
@@ -9674,7 +9676,7 @@ fun WalletScreen(
         ) {
             WalletActivityBtn(icon = Icons.Default.ArrowOutward, title = "Send", enabled = false, onClick = { showSendMoneyDialog = true })
             WalletActivityBtn(icon = Icons.Default.SouthEast, title = "Request", enabled = false, onClick = { showRequestMoneyDialog = true })
-            WalletActivityBtn(icon = Icons.Default.CallSplit, title = "Split", enabled = false, onClick = { showSplitDialog = true })
+            WalletActivityBtn(icon = Icons.AutoMirrored.Filled.CallSplit, title = "Split", enabled = false, onClick = { showSplitDialog = true })
             
             // Neon Green Action for funding - Page 6 (Category F Integration)
             Box(
@@ -10065,7 +10067,7 @@ fun WalletScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ReceiptLong,
+                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                             contentDescription = "No transactions",
                             tint = RazorTeal.copy(0.4f),
                             modifier = Modifier.size(48.dp)
@@ -10277,7 +10279,7 @@ fun WalletScreen(
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))
-                        Divider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 4.dp))
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 4.dp))
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // Bio
@@ -11005,7 +11007,7 @@ fun WalletScreen(
                         modifier = Modifier.fillMaxWidth().padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(imageVector = Icons.Default.Launch, contentDescription = null, tint = GrayText.copy(alpha = 0.4f), modifier = Modifier.size(28.dp))
+                        Icon(imageVector = Icons.AutoMirrored.Filled.Launch, contentDescription = null, tint = GrayText.copy(alpha = 0.4f), modifier = Modifier.size(28.dp))
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("No Personal Releases Yet", color = GrayText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Text("Any post you publish using the Creative Studio will show up here.", color = GrayText.copy(0.7f), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp))
@@ -11519,7 +11521,7 @@ fun RecentActivityItem(title: String, time: String, amt: String, amtColor: Color
                     .background(Color(0xFF2C1E4E)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = Icons.Default.ReceiptLong, contentDescription = null, tint = RazorBlue, modifier = Modifier.size(18.dp))
+                Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = RazorBlue, modifier = Modifier.size(18.dp))
             }
             Spacer(modifier = Modifier.width(10.dp))
             Column {
@@ -11607,7 +11609,7 @@ fun CreatorDetailScreen(
                         .background(Color.Black.copy(alpha = 0.4f))
                         .size(34.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back back step", tint = LightText, modifier = Modifier.size(16.dp))
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back back step", tint = LightText, modifier = Modifier.size(16.dp))
                 }
                 Text(
                     text = creator.handle.uppercase(),
@@ -15461,7 +15463,7 @@ fun BuiltInVideoPlayerOverlay(
 
                             IconButton(onClick = { isMuted = !isMuted }) {
                                 Icon(
-                                    imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                    imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                                     contentDescription = "Audio toggle",
                                     tint = if (isMuted) Color.Red else RazorTeal,
                                     modifier = Modifier.size(20.dp)
@@ -15642,7 +15644,7 @@ fun BuiltInVideoPlayerOverlay(
                                                 .size(40.dp)
                                                 .background(RazorTeal, RoundedCornerShape(10.dp))
                                         ) {
-                                            Icon(imageVector = Icons.Default.Send, contentDescription = "Send", tint = Color.Black, modifier = Modifier.size(16.dp))
+                                            Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = Color.Black, modifier = Modifier.size(16.dp))
                                         }
                                     }
                                 }
@@ -16124,7 +16126,7 @@ fun GridPostCard(
                     )
                 } else if (post.contentImage == "attached_audio") {
                     Icon(
-                        imageVector = Icons.Default.VolumeUp,
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = "Audio indicator",
                         tint = Color.White,
                         modifier = Modifier
@@ -17064,7 +17066,7 @@ fun CommentDialog(
                 ) {
                     IconButton(onClick = onDismiss) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Close",
                             tint = Color.White
                         )
@@ -17577,7 +17579,7 @@ fun CommentDialog(
                             enabled = newCommentText.isNotBlank()
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Send,
+                                imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "Send comment",
                                 tint = if (newCommentText.isNotBlank()) RazorTeal else GrayText,
                                 modifier = Modifier.size(20.dp)
@@ -17705,7 +17707,7 @@ fun TrendingTopicsCard(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Default.TrendingUp,
+                                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = null,
                                     tint = if (isSelected) RazorTeal else RazorBlue,
                                     modifier = Modifier.size(12.dp)
@@ -18003,7 +18005,7 @@ fun GlobalSearchResultsPanel(
                                 }
 
                                 Icon(
-                                    imageVector = Icons.Default.ArrowForward,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = "View Profile",
                                     tint = RazorTeal,
                                     modifier = Modifier.size(18.dp)
@@ -18023,7 +18025,7 @@ fun GlobalSearchResultsPanel(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                imageVector = Icons.Default.Feed,
+                                imageVector = Icons.AutoMirrored.Filled.Feed,
                                 contentDescription = "No Posts",
                                 tint = GrayText,
                                 modifier = Modifier.size(36.dp)
@@ -18642,7 +18644,7 @@ fun SnapPlaybackOverlay(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Icon(imageVector = Icons.Default.VolumeUp, contentDescription = "Audio on", tint = RazorTeal, modifier = Modifier.size(12.dp))
+                                    Icon(imageVector = Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "Audio on", tint = RazorTeal, modifier = Modifier.size(12.dp))
                                     Text("STEREO AUDIO", color = RazorTeal, fontSize = 8.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                                 }
                             }
@@ -18729,7 +18731,7 @@ fun SnapPlaybackOverlay(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
-                                                Icon(Icons.Default.VolumeUp, null, tint = RazorBlue, modifier = Modifier.size(14.dp))
+                                                Icon(Icons.AutoMirrored.Filled.VolumeUp, null, tint = RazorBlue, modifier = Modifier.size(14.dp))
                                                 Text(
                                                     text = "SOUND ON",
                                                     color = RazorBlue,
@@ -19132,7 +19134,7 @@ fun InstagramAdCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(
-                        imageVector = Icons.Default.ArrowForward,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Visit sponsor site",
                         tint = Color.Black,
                         modifier = Modifier.size(14.dp)
@@ -19446,7 +19448,7 @@ fun NotificationCenterDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onDismiss) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                     Text(
                         text = "NOTIFICATION CENTER",
@@ -19776,14 +19778,14 @@ fun NotificationCenterDialog(
                                     checked = pushEnabled,
                                     onCheckedChange = { viewModel.setPushNotificationsEnabled(it) }
                                 )
-                                Divider(color = Color.White.copy(0.06f))
+                                HorizontalDivider(color = Color.White.copy(0.06f))
                                 NotificationToggleRow(
                                     title = "System Audio Feedback",
                                     subtitle = "Play a high-fidelity digital chime for alerts",
                                     checked = soundEnabled,
                                     onCheckedChange = { viewModel.setSoundEnabled(it) }
                                 )
-                                Divider(color = Color.White.copy(0.06f))
+                                HorizontalDivider(color = Color.White.copy(0.06f))
                                 NotificationToggleRow(
                                     title = "Haptic Vibration Chords",
                                     subtitle = "Trigger synchronized physical haptic feedback",
@@ -19815,14 +19817,14 @@ fun NotificationCenterDialog(
                                     checked = walletAlerts,
                                     onCheckedChange = { viewModel.setWalletAlertsEnabled(it) }
                                 )
-                                Divider(color = Color.White.copy(0.06f))
+                                HorizontalDivider(color = Color.White.copy(0.06f))
                                 NotificationToggleRow(
                                     title = "Creator Tiers & Subscriptions",
                                     subtitle = "Log follows, publications, and subscription tier events",
                                     checked = creatorAlerts,
                                     onCheckedChange = { viewModel.setCreatorAlertsEnabled(it) }
                                 )
-                                Divider(color = Color.White.copy(0.06f))
+                                HorizontalDivider(color = Color.White.copy(0.06f))
                                 NotificationToggleRow(
                                     title = "Secure Encrypted Chats",
                                     subtitle = "Notify when receiving end-to-end encrypted direct signals",
@@ -19876,7 +19878,7 @@ fun NotificationCenterDialog(
                                 }
 
                                 Spacer(modifier = Modifier.height(14.dp))
-                                Divider(color = Color.White.copy(0.06f))
+                                HorizontalDivider(color = Color.White.copy(0.06f))
                                 Spacer(modifier = Modifier.height(14.dp))
 
                                 Row(
@@ -20012,7 +20014,7 @@ fun AnalyticsKpiCard(title: String, value: String, change: String, isPositive: B
             Spacer(modifier = Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                    imageVector = if (isPositive) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                     contentDescription = null,
                     tint = if (isPositive) RazorTeal else Color(0xFFFF3B30),
                     modifier = Modifier.size(12.dp)
@@ -20914,7 +20916,7 @@ fun SettingsScreen(
                                 }
                                 
                                 Spacer(modifier = Modifier.height(14.dp))
-                                Divider(color = Color.White.copy(0.06f))
+                                HorizontalDivider(color = Color.White.copy(0.06f))
                                 Spacer(modifier = Modifier.height(14.dp))
                                 
                                 Text(
@@ -21100,7 +21102,7 @@ fun SettingsScreen(
                                 shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(imageVector = Icons.Default.OpenInNew, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                                Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text("Open OS System Settings", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                             }
@@ -21351,7 +21353,7 @@ fun SettingsScreen(
             // Section 5.1: User Manual, Guide & App Policies
             item {
                 SettingsOptionRow(
-                    icon = Icons.Default.Help,
+                    icon = Icons.AutoMirrored.Filled.Help,
                     iconColor = RazorTeal,
                     title = "User Manual, Guide & Policies",
                     subtitle = "User guide, community rules & security policies",
@@ -21518,7 +21520,7 @@ fun SettingsScreen(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().testTag("logout_btn")
                 ) {
-                    Icon(imageVector = Icons.Default.ExitToApp, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Disconnect Session (Log Out)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
@@ -21742,7 +21744,7 @@ fun MandatoryEmailVerificationScreen(
                 .background(Color.White.copy(alpha = 0.08f))
         ) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back to Login",
                 tint = Color.White
             )
@@ -21997,7 +21999,7 @@ fun AppLockScreen(
                 .background(Color.White.copy(alpha = 0.05f))
         ) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Logout",
                 tint = Color.LightGray
             )
@@ -22448,7 +22450,7 @@ fun CyberLoginAndSignUpScreen(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = androidx.compose.ui.text.input.KeyboardType.Email,
-                        autoCorrect = false
+                        autoCorrectEnabled = false
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("auth_email_input"),
                     leadingIcon = {
@@ -22476,7 +22478,7 @@ fun CyberLoginAndSignUpScreen(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone,
-                            autoCorrect = false
+                            autoCorrectEnabled = false
                         ),
                         modifier = Modifier.fillMaxWidth().testTag("auth_phone_input"),
                         leadingIcon = {
@@ -22503,7 +22505,7 @@ fun CyberLoginAndSignUpScreen(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = androidx.compose.ui.text.input.KeyboardType.Password,
-                        autoCorrect = false
+                        autoCorrectEnabled = false
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("auth_password_input"),
                     visualTransformation = if (isPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
@@ -22577,7 +22579,7 @@ fun CyberLoginAndSignUpScreen(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = androidx.compose.ui.text.input.KeyboardType.Password,
-                            autoCorrect = false
+                            autoCorrectEnabled = false
                         ),
                         modifier = Modifier.fillMaxWidth().testTag("auth_confirm_password_input"),
                         visualTransformation = if (isPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
