@@ -1610,7 +1610,7 @@ fun FeedScreen(
                 imageUrl = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800",
                 caption = "Adjusting decibel ratios & low-pass filtering. Late night neon synth session! 🌌🎧 #synthwave #music",
                 durationSeconds = 12,
-                isPremium = true,
+                isPremium = false,
                 requiredTier = "BRONZE",
                 likesCount = 482
             ),
@@ -1623,7 +1623,7 @@ fun FeedScreen(
                 imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
                 caption = "Exclusive sneak preview of the virtual cyberpunk 3D art collection. Drops on Friday! 🎭⚡️ #neon #pixel",
                 durationSeconds = 10,
-                isPremium = true,
+                isPremium = false,
                 requiredTier = "SILVER",
                 likesCount = 924
             ),
@@ -1636,7 +1636,7 @@ fun FeedScreen(
                 imageUrl = "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800",
                 caption = "High-frequency trends & algorithmic matrix projection analysis. Stay ahead! 📊🧠 #finance #strategy",
                 durationSeconds = 15,
-                isPremium = true,
+                isPremium = false,
                 requiredTier = "GOLD",
                 likesCount = 1045
             )
@@ -1896,7 +1896,7 @@ fun FeedScreen(
                 // Horizontal Stories Bar - Page 1
                 item {
                     StoriesBar(
-                        snaps = creatorSnaps,
+                        snaps = creatorSnaps.filter { !it.isPremium },
                         subscriptions = subscriptions,
                         onSnapClick = { activePlayingSnap = it },
                         onCreateStoryClick = { showStoryStudio = true },
@@ -1995,7 +1995,7 @@ fun FeedScreen(
                                      (it.tierName == "SILVER" && post.requiredTier != "GOLD") || 
                                      (it.tierName == "BRONZE" && post.requiredTier == "BRONZE"))
                                 }
-                                val isLocked = post.isPremium && !hasSubscription && post.creatorId != "pixel_queen"
+                                val isLocked = false
 
                                 val isPostInViewport = remember(visibleCreatorPostIdsState) {
                                     derivedStateOf {
@@ -2056,7 +2056,7 @@ fun FeedScreen(
                                      (it.tierName == "SILVER" && post.requiredTier != "GOLD") || 
                                      (it.tierName == "BRONZE" && post.requiredTier == "BRONZE"))
                                 }
-                                val isLocked = post.isPremium && !hasSubscription
+                                val isLocked = false
 
                                 EntranceAnimationContainer {
                                     PostCard(
@@ -2190,7 +2190,7 @@ fun FeedScreen(
 
     if (activePlayingSnap != null) {
         SnapPlaybackOverlay(
-            snaps = creatorSnaps,
+            snaps = creatorSnaps.filter { !it.isPremium },
             initialSnap = activePlayingSnap!!,
             subscriptions = subscriptions,
             onLikeToggle = { /* Optional analytical or status logging */ },
@@ -2243,7 +2243,7 @@ fun FeedScreen(
                          (it.tierName == "SILVER" && post.requiredTier != "GOLD") || 
                          (it.tierName == "BRONZE" && post.requiredTier == "BRONZE"))
                     }
-                    val isLocked = post.isPremium && !hasSubscription
+                    val isLocked = false
 
                     PostCard(
                         post = post,
@@ -3282,7 +3282,7 @@ fun StoriesBar(
                          (it.tierName == "SILVER" && snap.requiredTier != "GOLD") || 
                          (it.tierName == "BRONZE" && snap.requiredTier == "BRONZE"))
                     }
-                    val isLocked = snap.isPremium && !hasSubscription
+                    val isLocked = false // Premium lock removed for stories/shots as requested
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -4189,28 +4189,6 @@ fun PostCard(
                         tint = LightText,
                         modifier = Modifier.size(20.dp)
                     )
-                }
-
-                // Sleek Donate Icon button which is permanently locked
-                Box(contentAlignment = Alignment.Center) {
-                    Button(
-                        onClick = { onTip(0.0) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.DarkGray
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        modifier = Modifier.height(34.dp).testTag("post_donate_btn")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Donate/Tip Icon Locked",
-                            tint = Color.LightGray,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "Tips Locked", color = Color.LightGray, fontWeight = FontWeight.Black, fontSize = 11.sp)
-                    }
                 }
             }
 
@@ -5973,7 +5951,7 @@ fun CreatorsScreen(
                          (it.tierName == "SILVER" && post.requiredTier != "GOLD") || 
                          (it.tierName == "BRONZE" && post.requiredTier == "BRONZE"))
                     }
-                    val isLocked = post.isPremium && !hasSubscription
+                    val isLocked = false
                     val isCreatorVerified = creators.find { it.id == post.creatorId }?.isVerified ?: true
 
                     EntranceAnimationContainer {
@@ -14937,7 +14915,7 @@ fun GridReelCard(
          (it.tierName == "SILVER" && reel.requiredTier != "GOLD") || 
          (it.tierName == "BRONZE" && reel.requiredTier == "BRONZE"))
     }
-    val isLocked = reel.isPremium && !hasSubscription && reel.creatorId != "pixel_queen"
+    val isLocked = false
 
     val randomViews = remember(reel.id) { (1000..95000).random() }
     val viewsStr = if (randomViews >= 1000) "${String.format("%.1f", randomViews / 1000f)}K" else "$randomViews"
@@ -15066,7 +15044,7 @@ fun BuiltInVideoPlayerOverlay(
          (it.tierName == "SILVER" && post.requiredTier != "GOLD") || 
          (it.tierName == "BRONZE" && post.requiredTier == "BRONZE"))
     }
-    val isLocked = post.isPremium && !hasSubscription && post.creatorId != "pixel_queen"
+    val isLocked = false
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -15796,7 +15774,7 @@ fun ReelPlaybackOverlay(
          (it.tierName == "SILVER" && reel.requiredTier != "GOLD") || 
          (it.tierName == "BRONZE" && reel.requiredTier == "BRONZE"))
     }
-    val isLocked = reel.isPremium && !hasSubscription && reel.creatorId != "pixel_queen"
+    val isLocked = false
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -16052,7 +16030,7 @@ fun GridPostCard(
          (it.tierName == "SILVER" && post.requiredTier != "GOLD") || 
          (it.tierName == "BRONZE" && post.requiredTier == "BRONZE"))
     }
-    val isLocked = post.isPremium && !hasSubscription && post.creatorId != "pixel_queen"
+    val isLocked = false
 
     val context = androidx.compose.ui.platform.LocalContext.current
     var showFullPostDialog by remember { mutableStateOf(false) }
@@ -18232,7 +18210,7 @@ fun SnapCard(
          (it.tierName == "SILVER" && snap.requiredTier != "GOLD") || 
          (it.tierName == "BRONZE" && snap.requiredTier == "BRONZE"))
     }
-    val isLocked = snap.isPremium && !hasSubscription
+    val isLocked = false // Premium lock removed for stories/shots as requested
 
     Card(
         modifier = Modifier
@@ -18426,7 +18404,7 @@ fun SnapPlaybackOverlay(
          (it.tierName == "SILVER" && currentSnap.requiredTier != "GOLD") || 
          (it.tierName == "BRONZE" && currentSnap.requiredTier == "BRONZE"))
     }
-    val isLocked = currentSnap.isPremium && !hasSubscription
+    val isLocked = false // Premium lock removed for stories/shots as requested
 
     Dialog(
         onDismissRequest = onDismiss,

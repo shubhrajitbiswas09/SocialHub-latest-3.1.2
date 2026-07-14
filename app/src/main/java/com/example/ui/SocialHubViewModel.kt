@@ -1187,11 +1187,14 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
         if (!_extAntiHackerGuard.value) return false
         val lowercaseInput = input.lowercase()
         val maliciousPatterns = listOf(
-            "' or 1=1", "drop table", "select *", "<script>", "union select", "exec xp_cmdshell"
+            "' or 1=1", "drop table", "select *", "<script>", "union select", "union all",
+            "exec xp_cmdshell", "javascript:", "onerror=", "onload=", "<iframe", "alert(",
+            "eval(", "; drop ", "; delete ", "; insert ", "/bin/sh", "/bin/bash", "rm -rf",
+            "wget ", "curl ", "<meta http-equiv", "base64_decode", "system(", "passthru(", "shell_exec("
         )
         for (pattern in maliciousPatterns) {
             if (lowercaseInput.contains(pattern)) {
-                logSecurityEvent("🚨 ANTI-HACKER GUARD: Malicious code injection attempt blocked on query input!")
+                logSecurityEvent("🚨 ANTI-HACKER GUARD: Malicious code injection attempt blocked on input: $pattern!")
                 showNotification("Payload Blocked! 🛡️", "Malicious SQLi / XSS characters quarantined by Anti-Hacker Guard.")
                 return true
             }
@@ -1255,6 +1258,7 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
     val chatEncryptionEnabled: StateFlow<Boolean> = _chatEncryptionEnabled.asStateFlow()
 
     fun updateProfile(name: String, handle: String, bio: String, link: String, dpUri: String, bannerUri: String) {
+        if (checkForMaliciousInput(name) || checkForMaliciousInput(handle) || checkForMaliciousInput(bio) || checkForMaliciousInput(link)) return
         val sanitizedName = FormSecuritySanitizer.sanitizeProfileName(name)
         val sanitizedHandle = FormSecuritySanitizer.sanitizeProfileHandle(handle)
         val sanitizedBio = FormSecuritySanitizer.sanitizePostCaption(bio)
@@ -1366,7 +1370,7 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     // --- DEVICE PROTECTION & LAG WATCHDOG Safeguard ---
-    private val _isLagWatchdogEnabled = MutableStateFlow(true)
+    private val _isLagWatchdogEnabled = MutableStateFlow(false)
     val isLagWatchdogEnabled: StateFlow<Boolean> = _isLagWatchdogEnabled.asStateFlow()
 
     private val _isLaggingOrHanging = MutableStateFlow(false)
@@ -1782,30 +1786,11 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
 
     // Buy Creator Subscription (Silver, Bronze, Gold with instant feed locks release!)
     fun triggerSubscriptionBuy(creator: Creator, tier: String, price: Double) {
-        val checkout = CheckoutInfo(
-            title = "Subscribe: ${tier.uppercase()} Tier",
-            description = "Unlock premium, high-tier post lockouts for @${creator.handle}",
-            amount = price,
-            creatorId = creator.id,
-            creatorHandle = creator.handle,
-            action = {
-                executeSubscriptionBuy(creator, tier, price)
-            }
-        )
-        _activeCheckoutInfo.value = checkout
+        executeSubscriptionBuy(creator, tier, 0.0)
     }
 
     private fun executeSubscriptionBuy(creator: Creator, tier: String, price: Double) {
-        if (price <= 0.0 || !price.isFinite() || price > 100000.0) {
-            showNotification("Validation Failed", "Invalid subscription tier price!")
-            return
-        }
-        if (_walletBalance.value < price) {
-            showNotification("Payment Failed", "Wallet balance insufficient. Please deposit funds.")
-            return
-        }
         viewModelScope.launch {
-            _walletBalance.value -= price
             // Save subscription to Room database
             repository.insertSubscription(
                 Subscription(
@@ -1813,14 +1798,14 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
                     creatorName = creator.name,
                     creatorHandle = creator.handle,
                     tierName = tier.uppercase(),
-                    amount = price
+                    amount = 0.0
                 )
             )
             // Add Transaction history
             val tx = Transaction(
                 type = "SUBSCRIPTION",
                 description = "Subscribed to @${creator.handle} [${tier.uppercase()}]",
-                amount = price,
+                amount = 0.0,
                 currency = creator.currency,
                 recipientHandle = creator.handle,
                 status = "SUCCESS",
@@ -1845,37 +1830,18 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
             showNotification("Event Sold Out", "All physical and livestream credentials have been allocated.")
             return
         }
-        val checkout = CheckoutInfo(
-            title = "Buy Event Ticket",
-            description = "Entry ticket: ${event.title}",
-            amount = event.ticketPrice,
-            creatorId = event.creatorId,
-            creatorHandle = event.creatorHandle,
-            action = {
-                executeTicketBuy(event)
-            }
-        )
-        _activeCheckoutInfo.value = checkout
+        executeTicketBuy(event)
     }
 
     private fun executeTicketBuy(event: Event) {
-        if (event.ticketPrice <= 0.0 || !event.ticketPrice.isFinite() || event.ticketPrice > 100000.0) {
-            showNotification("Validation Failed", "Invalid ticket price!")
-            return
-        }
-        if (_walletBalance.value < event.ticketPrice) {
-            showNotification("Insufficient Wallet", "Deposit sandbox funds first.")
-            return
-        }
         viewModelScope.launch {
-            _walletBalance.value -= event.ticketPrice
             // Update sold ticket count in Room Database
             repository.buyTicket(event.id, event)
             // Insert premium transaction slip
             val tx = Transaction(
                 type = "TICKET_BUY",
                 description = "Bought Ticket: ${event.title}",
-                amount = event.ticketPrice,
+                amount = 0.0,
                 currency = event.currency,
                 recipientHandle = event.creatorHandle,
                 status = "SUCCESS",
@@ -1888,36 +1854,16 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
 
     // Purchase any Marketplace Product or Creator Digital Good securely
     fun purchaseMarketplaceProduct(product: MarketplaceProduct, callback: () -> Unit = {}) {
-        val checkout = CheckoutInfo(
-            title = "Purchase: ${product.name}",
-            description = "Secure buy from @${product.creatorName}",
-            amount = product.price,
-            creatorId = "",
-            creatorHandle = product.creatorName,
-            action = {
-                executeProductPurchase(product, callback)
-            }
-        )
-        _activeCheckoutInfo.value = checkout
+        executeProductPurchase(product, callback)
     }
 
     private fun executeProductPurchase(product: MarketplaceProduct, callback: () -> Unit) {
-        if (product.price <= 0.0 || !product.price.isFinite() || product.price > 100000.0) {
-            showNotification("Validation Failed", "Invalid product price!")
-            return
-        }
-        if (_walletBalance.value < product.price) {
-            showNotification("Insufficient Funds", "Wallet balance insufficient. Please deposit funds first.")
-            return
-        }
         viewModelScope.launch {
-            _walletBalance.value -= product.price
-            
             // Record payment transaction
             val tx = Transaction(
                 type = "PRODUCT_BUY",
                 description = "Purchased product: ${product.name}",
-                amount = product.price,
+                amount = 0.0,
                 currency = "USD",
                 recipientHandle = product.creatorName,
                 status = "SUCCESS",
@@ -1965,6 +1911,7 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
     // Send encrypted/plain chat message
     fun sendChatMessage(receiverHandle: String, rawContent: String) {
         if (rawContent.isBlank()) return
+        if (checkForMaliciousInput(rawContent)) return
         val sanitizedContent = FormSecuritySanitizer.sanitizeChatMessage(rawContent)
         if (sanitizedContent.isBlank()) return
         if (!validateRequest("Send Message", "To: @$receiverHandle")) return
@@ -2077,6 +2024,7 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
     // Publish dynamic post from Creative Studio or New Post custom dialog
     fun publishPost(caption: String, creator: Creator? = null, attachedMediaType: String? = null) {
         if (caption.isBlank()) return
+        if (checkForMaliciousInput(caption)) return
         val sanitizedCaption = FormSecuritySanitizer.sanitizePostCaption(caption)
         if (sanitizedCaption.isBlank()) return
         if (!validateRequest("Publish Post", "Caption: ${sanitizedCaption.take(15)}")) return
