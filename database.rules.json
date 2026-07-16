@@ -1,0 +1,43 @@
+{
+  "rules": {
+    "user": {
+      "$userId": {
+        // 1. A user can read their own profile, or any verified admin can read it
+        ".read": "auth != null && (auth.uid == $userId || root.child('user').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+        
+        // 2. A user can write to their own profile, or any verified admin can write directly
+        ".write": "auth != null && (auth.uid == $userId || root.child('user').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+        
+        // 3. Strict anti-hacking, format validation, and privilege-escalation prevention logic
+        ".validate": "
+          root.child('user').child(auth.uid).child('role').val() == 'admin' || 
+          root.child('users').child(auth.uid).child('role').val() == 'admin' || 
+          (!data.exists() && newData.child('role').val() == 'user') || 
+          (!newData.hasChild('role') || data.child('role').val() == newData.child('role').val())
+        "
+      }
+    },
+    "users": {
+      "$userId": {
+        ".read": "auth != null && (auth.uid == $userId || root.child('user').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+        ".write": "auth != null && (auth.uid == $userId || root.child('user').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+        ".validate": "
+          root.child('user').child(auth.uid).child('role').val() == 'admin' || 
+          root.child('users').child(auth.uid).child('role').val() == 'admin' || 
+          (!data.exists() && newData.child('role').val() == 'user') || 
+          (!newData.hasChild('role') || data.child('role').val() == newData.child('role').val())
+        "
+      }
+    },
+    "admin_panel": {
+      // Accessible ONLY by verified admins
+      ".read": "auth != null && (root.child('user').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+      ".write": "auth != null && (root.child('user').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+    },
+    "public_data": {
+      // Any authenticated user can read; only admins can modify/publish data
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('user').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+    }
+  }
+}

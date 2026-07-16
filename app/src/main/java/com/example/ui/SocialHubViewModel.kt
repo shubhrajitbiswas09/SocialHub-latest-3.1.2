@@ -144,8 +144,47 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
     }
     
     val events = repository.events
-    val marketplaceProducts = repository.marketplaceProducts
+    
+    private val _remoteConfigTrigger = MutableStateFlow(0)
+    val marketplaceProducts: Flow<List<com.example.data.MarketplaceProduct>> = repository.marketplaceProducts
+        .combine(_remoteConfigTrigger) { prods, _ ->
+            prods.map { product ->
+                product.copy(price = getPriceForProduct(product.id, product.price))
+            }
+        }
+
     val marketplaceBanners = repository.marketplaceBanners
+
+    private val _remoteWelcomeMessage = MutableStateFlow("Welcome to the secure SocialHub network. All data transfers are end-to-end encrypted.")
+    val remoteWelcomeMessage: StateFlow<String> = _remoteWelcomeMessage.asStateFlow()
+
+    private val _remoteWelcomeSubMessage = MutableStateFlow("End-To-End Encrypted Session Isolation Active")
+    val remoteWelcomeSubMessage: StateFlow<String> = _remoteWelcomeSubMessage.asStateFlow()
+
+    private fun getPriceForProduct(id: Int, defaultPrice: Double): Double {
+        val key = when (id) {
+            1 -> "price_apex_audio_processor"
+            2 -> "price_ledgerpro_crypto_wallet"
+            3 -> "price_creative_glow_lightroom"
+            4 -> "price_latte_art_ebook"
+            5 -> "price_high_yield_ebook"
+            6 -> "price_celestial_synth_loops"
+            7 -> "price_neon_blender_shaders"
+            else -> null
+        }
+        if (key != null) {
+            try {
+                val remoteConfig = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance()
+                val remoteValue = remoteConfig.getDouble(key)
+                if (remoteValue > 0.0) {
+                    return remoteValue
+                }
+            } catch (e: Exception) {
+                // Remote config might not be initialized yet
+            }
+        }
+        return defaultPrice
+    }
 
     sealed class BannersApiState {
         object Loading : BannersApiState()
@@ -177,20 +216,11 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
     private val _userVibeIndex = MutableStateFlow(0)
     val userVibeIndex: StateFlow<Int> = _userVibeIndex.asStateFlow()
 
-    private val _userEmail = MutableStateFlow(
-        run {
-            val saved = sp.getString("user_email", "") ?: ""
-            if (saved.trim().equals(decryptSecret(intArrayOf(104, 93, 106, 87, 93, 103, 86, 39, 37, 37, 46, 87, 94, 104, 108, 86, 104, 53, 92, 98, 86, 94, 97, 35, 88, 100, 98)), ignoreCase = true)) {
-                sp.edit().putString("user_email", "").putBoolean("is_user_logged_in", false).apply()
-                ""
-            } else {
-                saved
-            }
-        }
-    )
+    private val _userEmail = MutableStateFlow(sp.getString("user_email", "") ?: "")
     val userEmail: StateFlow<String> = _userEmail.asStateFlow()
 
     init {
+        setupFirebaseRemoteConfig(application)
         fetchExternalBanners()
         registerNetworkCallback(application)
         viewModelScope.launch {
@@ -247,6 +277,54 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
                 _isNetworkAvailable.value = true
             }
         }
+    }
+
+    private fun setupFirebaseRemoteConfig(application: Application) {
+        try {
+            val remoteConfig = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance()
+            val configSettings = com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder()
+                .setMinimumFetchIntervalInSeconds(0) // Instant updates for development & sandboxing
+                .build()
+            remoteConfig.setConfigSettingsAsync(configSettings)
+            remoteConfig.setDefaultsAsync(com.example.R.xml.remote_config_defaults)
+
+            // Dynamic fetch and activation
+            remoteConfig.fetchAndActivate()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        updateRemoteConfigValues(remoteConfig)
+                    }
+                }
+
+            // Real-time remote config update listener
+            remoteConfig.addOnConfigUpdateListener(object : com.google.firebase.remoteconfig.ConfigUpdateListener {
+                override fun onUpdate(configUpdate: com.google.firebase.remoteconfig.ConfigUpdate) {
+                    remoteConfig.activate().addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            updateRemoteConfigValues(remoteConfig)
+                        }
+                    }
+                }
+
+                override fun onError(error: com.google.firebase.remoteconfig.FirebaseRemoteConfigException) {
+                    logSecurityEvent("📡 Remote Config Update Error: ${error.localizedMessage}")
+                }
+            })
+        } catch (e: Exception) {
+            logSecurityEvent("📡 Remote Config System Fault: ${e.localizedMessage}")
+        }
+    }
+
+    private fun updateRemoteConfigValues(remoteConfig: com.google.firebase.remoteconfig.FirebaseRemoteConfig) {
+        val welcome = remoteConfig.getString("welcome_message")
+        if (welcome.isNotBlank()) {
+            _remoteWelcomeMessage.value = welcome
+        }
+        val subWelcome = remoteConfig.getString("welcome_sub_message")
+        if (subWelcome.isNotBlank()) {
+            _remoteWelcomeSubMessage.value = subWelcome
+        }
+        _remoteConfigTrigger.value++
     }
 
     fun fetchExternalBanners() {
@@ -490,10 +568,7 @@ class SocialHubViewModel(application: Application) : AndroidViewModel(applicatio
     // --- MANDATORY EMAIL VERIFICATION STATES ---
 
     // --- LOGIN AND SIGNUP STATES & CONTROLS ---
-    private val _isUserLoggedIn = MutableStateFlow(
-        sp.getBoolean("is_user_logged_in", false) && 
-        !(sp.getString("user_email", "") ?: "").trim().equals(decryptSecret(intArrayOf(104, 93, 106, 87, 93, 103, 86, 39, 37, 37, 46, 87, 94, 104, 108, 86, 104, 53, 92, 98, 86, 94, 97, 35, 88, 100, 98)), ignoreCase = true)
-    )
+    private val _isUserLoggedIn = MutableStateFlow(sp.getBoolean("is_user_logged_in", false))
     val isUserLoggedIn: StateFlow<Boolean> = _isUserLoggedIn.asStateFlow()
 
     private val _loginErrorMessage = MutableStateFlow<String?>(null)

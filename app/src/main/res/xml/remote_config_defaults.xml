@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defaultsMap>
+    <!-- Welcome message and global settings -->
+    <entry>
+        <key>welcome_message</key>
+        <value>Welcome to the SocialHub Secure Network. All data transfers and communication sessions are fully encrypted using military-grade security protocols.</value>
+    </entry>
+    <entry>
+        <key>welcome_sub_message</key>
+        <value>End-To-End Encrypted Session Isolation Active</value>
+    </entry>
+    
+    <!-- Product Prices (Controlled from Server-side) -->
+    <entry>
+        <key>price_apex_audio_processor</key>
+        <value>39.99</value>
+    </entry>
+    <entry>
+        <key>price_ledgerpro_crypto_wallet</key>
+        <value>149.00</value>
+    </entry>
+    <entry>
+        <key>price_creative_glow_lightroom</key>
+        <value>14.50</value>
+    </entry>
+    <entry>
+        <key>price_latte_art_ebook</key>
+        <value>4.99</value>
+    </entry>
+    <entry>
+        <key>price_high_yield_ebook</key>
+        <value>19.99</value>
+    </entry>
+    <entry>
+        <key>price_celestial_synth_loops</key>
+        <value>9.99</value>
+    </entry>
+    <entry>
+        <key>price_neon_blender_shaders</key>
+        <value>12.50</value>
+    </entry>
+
+    <!-- Ad and Promo campaign controls -->
+    <entry>
+        <key>promo_banner_discount</key>
+        <value>Exclusive 45% live launching discount on the low-latency synthesizer &amp; spatial dynamics rack.</value>
+    </entry>
+    <entry>
+        <key>security_shield_active_flag</key>
+        <value>true</value>
+    </entry>
+</defaultsMap>

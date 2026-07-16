@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Check if user is fully authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: Check if user matches their own document ID in 'user' or 'users' collection
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper: Check if user is verified administrator
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true || 
+        get(/databases/$(database)/documents/user/$(request.auth.uid)).data.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    // 1. User collection rules (Supports both singular 'user' and plural 'users' schemas)
+    match /user/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Prevent normal users from escalating their role to 'admin' during creation or update
+      allow create: if isAuthenticated() && (
+        (isOwner(userId) && request.resource.data.role != 'admin') || isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        (isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))) || isAdmin()
+      );
+      allow delete: if isAdmin();
+
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && (
+        (isOwner(userId) && request.resource.data.role != 'admin') || isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        (isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))) || isAdmin()
+      );
+      allow delete: if isAdmin();
+
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // 2. Admin panel collection rules (Accessible ONLY by verified admins)
+    match /admin_panel/{document} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /admin_dashboard/{document} {
+      allow read, write: if isAdmin();
+    }
+
+    // 3. Public data collection rules (Read access for all authenticated, write only for admins)
+    match /public_data/{document} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // 4. Secure rule for private messages
+    match /messages/{messageId} {
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      allow read, update, delete: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid || 
+        resource.data.recipientId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // 5. Secure rule for transactions and wallet balances (Immutable once written)
+    match /transactions/{transactionId} {
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if false; 
+    }
+
+    // 6. Secure rule for application configuration states
+    match /app_settings/{settingId} {
+      allow read: if isAuthenticated(); 
+      allow write: if isAdmin(); 
+    }
+
+    // 7. Secure rule for digital marketplace product templates
+    match /products/{productId} {
+      allow read: if isAuthenticated(); 
+      allow write: if isAdmin(); 
+    }
+  }
+}

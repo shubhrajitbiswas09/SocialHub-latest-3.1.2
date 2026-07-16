@@ -331,6 +331,8 @@ fun SocialHubApp(viewModel: SocialHubViewModel) {
     val loginErrorMessage by viewModel.loginErrorMessage.collectAsStateWithLifecycle()
     val registerErrorMessage by viewModel.registerErrorMessage.collectAsStateWithLifecycle()
     val isAuthenticating by viewModel.isAuthenticating.collectAsStateWithLifecycle()
+    val remoteWelcomeMessage by viewModel.remoteWelcomeMessage.collectAsStateWithLifecycle()
+    val remoteWelcomeSubMessage by viewModel.remoteWelcomeSubMessage.collectAsStateWithLifecycle()
 
     val isEmailVerified by viewModel.isEmailVerified.collectAsStateWithLifecycle()
     val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
@@ -353,7 +355,9 @@ fun SocialHubApp(viewModel: SocialHubViewModel) {
                 } else {
                     viewModel.loginWithGoogleFirebaseToken("", typedEmail)
                 }
-            }
+            },
+            welcomeMessage = remoteWelcomeMessage,
+            welcomeSubMessage = remoteWelcomeSubMessage
         )
         return
     }
@@ -870,6 +874,7 @@ fun SocialHubApp(viewModel: SocialHubViewModel) {
                                 } else {
                                     FeedErrorBoundary(onReset = { viewModel.triggerRefresh() }) {
                                         FeedScreen(
+                                            viewModel = viewModel,
                                             currentScreen = currentScreen,
                                             posts = filteredPosts,
                                             creators = creators,
@@ -1230,6 +1235,7 @@ sealed class CreatorFeedItem {
 
 @Composable
 fun FeedScreen(
+    viewModel: SocialHubViewModel,
     currentScreen: Screen,
     posts: List<Post>,
     creators: List<Creator>,
@@ -1251,6 +1257,7 @@ fun FeedScreen(
     var isGridView by remember { mutableStateOf(false) }
     var selectedGridPost by remember { mutableStateOf<Post?>(null) }
     var activePlayingSnap by remember { mutableStateOf<CreatorSnap?>(null) }
+    val likedSnapIds = remember { mutableStateListOf<String>() }
 
     val sampleAds = remember {
         listOf(
@@ -2193,7 +2200,33 @@ fun FeedScreen(
             snaps = creatorSnaps.filter { !it.isPremium },
             initialSnap = activePlayingSnap!!,
             subscriptions = subscriptions,
-            onLikeToggle = { /* Optional analytical or status logging */ },
+            likedSnapIds = likedSnapIds,
+            onLikeToggle = { snap, isLiked ->
+                if (isLiked) {
+                    if (!likedSnapIds.contains(snap.id)) {
+                        likedSnapIds.add(snap.id)
+                    }
+                    viewModel.triggerUserLikedStoryNotification(
+                        creatorName = snap.creatorName,
+                        creatorHandle = snap.creatorHandle,
+                        storyCaption = snap.caption
+                    )
+                    viewModel.triggerStoryLikeNotification(
+                        likerName = "You",
+                        likerHandle = "your_handle",
+                        storyCaption = snap.caption
+                    )
+                } else {
+                    likedSnapIds.remove(snap.id)
+                }
+                val snapIdx = creatorSnaps.indexOfFirst { it.id == snap.id }
+                if (snapIdx != -1) {
+                    val current = creatorSnaps[snapIdx]
+                    creatorSnaps[snapIdx] = current.copy(
+                        likesCount = current.likesCount + (if (isLiked) 1 else -1)
+                    )
+                }
+            },
             onVisitProfile = { pId ->
                 activePlayingSnap = null
                 onCreatorClick(pId)
@@ -18416,15 +18449,30 @@ fun SnapPlaybackOverlay(
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.92f))
         ) {
-            Box(
+            androidx.compose.foundation.layout.BoxWithConstraints(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .aspectRatio(9f / 16f)
+                    .fillMaxSize()
                     .align(Alignment.Center)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(ObsidianDark)
-                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
             ) {
+                val containerWidth = maxWidth
+                val containerHeight = maxHeight
+
+                // Calculate the optimal 9:16 aspect ratio size that will not exceed screen boundaries
+                val calculatedWidth = containerHeight * (9f / 16f)
+                val (finalWidth, finalHeight) = if (calculatedWidth <= containerWidth) {
+                    calculatedWidth to containerHeight
+                } else {
+                    containerWidth to (containerWidth * (16f / 9f))
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(finalWidth, finalHeight)
+                        .align(Alignment.Center)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(ObsidianDark)
+                        .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
+                ) {
                 if (isLocked) {
                     Column(
                         modifier = Modifier
@@ -18477,15 +18525,40 @@ fun SnapPlaybackOverlay(
                     var isLikedLocal by remember(currentIndex, likedSnapIds.size) { mutableStateOf(likedSnapIds.contains(currentSnap.id)) }
                     var likesLocal by remember(currentIndex) { mutableStateOf(currentSnap.likesCount) }
 
+                    var activeRealtimeLikeBy by remember(currentIndex) { mutableStateOf<String?>(null) }
+                    var activeRealtimeLikeHandle by remember(currentIndex) { mutableStateOf<String?>(null) }
+
                     LaunchedEffect(isPlayActive, currentIndex, activeMediaIndex) {
                         if (isPlayActive) {
                             val durationSeconds = currentSnap.durationSeconds.coerceAtLeast(5)
                             val steps = durationSeconds * 20
                             val delayMs = 50L
+                            
+                            // Start a coroutine to trigger a real-time simulated story like after 2-4 seconds
+                            val likeSimulationJob = kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                                delay(3000L + (500..1500).random().toLong())
+                                if (isPlayActive) {
+                                    val creatorsList = listOf(
+                                        "Aura Rhythm" to "aura_beats",
+                                        "Pixel Queen" to "pixel_q",
+                                        "Alex Chen" to "chen_wealth",
+                                        "ALX_FUTURE" to "future_alx",
+                                        "Nexa Spark" to "nexa_spark",
+                                        "Retro Glitch" to "retro_glitch"
+                                    )
+                                    val (name, handle) = creatorsList.random()
+                                    activeRealtimeLikeBy = name
+                                    activeRealtimeLikeHandle = handle
+                                    likesLocal += 1
+                                }
+                            }
+
                             for (i in (progress * steps).toInt()..steps) {
                                 delay(delayMs)
                                 progress = i.toFloat() / steps
                             }
+                            
+                            likeSimulationJob.cancel()
                             
                             // Advance within active story or jump to next story
                             if (activeMediaIndex + 1 < storyItems.size) {
@@ -18934,7 +19007,50 @@ fun SnapPlaybackOverlay(
                             )
                         }
                     }
+
+                    // Floating Real-Time Like Toast
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = activeRealtimeLikeBy != null,
+                        enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically(),
+                        exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.slideOutVertically(),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 120.dp)
+                            .padding(horizontal = 24.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.Black.copy(alpha = 0.85f))
+                                .border(1.2.dp, RazorTeal, RoundedCornerShape(16.dp))
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Real-Time Like",
+                                tint = InstaPink,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = "${activeRealtimeLikeBy} liked this story!",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "@${activeRealtimeLikeHandle} • Just now",
+                                    color = RazorTeal,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
                 }
+            }
             }
         }
     }
@@ -22062,7 +22178,9 @@ fun CyberLoginAndSignUpScreen(
     onLogin: (String, String) -> Unit,
     onRegister: (String, String, String, String) -> Unit,
     onTabChanged: () -> Unit = {},
-    onGoogleLogin: (String) -> Unit
+    onGoogleLogin: (String) -> Unit,
+    welcomeMessage: String = "SOCIAL HUB SECURE LOGIN",
+    welcomeSubMessage: String = "Enter credentials to load your encrypted profile session"
 ) {
     var isLoginTab by remember { mutableStateOf(true) }
     var emailInput by remember { mutableStateOf("") }
@@ -22070,6 +22188,11 @@ fun CyberLoginAndSignUpScreen(
     var passwordInput by remember { mutableStateOf("") }
     var confirmPasswordInput by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
+
+    var isHumanVerified by remember { mutableStateOf(false) }
+    var sliderValue by remember { mutableStateOf(0f) }
+    var captchaErrorMessage by remember { mutableStateOf<String?>(null) }
+    val gestureLogs = remember { androidx.compose.runtime.mutableStateListOf<Pair<Long, Float>>() }
 
     var showGoogleChooser by remember { mutableStateOf(false) }
     var googleChooserConnectingEmail by remember { mutableStateOf<String?>(null) }
@@ -22241,19 +22364,22 @@ fun CyberLoginAndSignUpScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "SOCIAL HUB SECURE LOGIN",
+                    text = welcomeMessage.uppercase(),
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.5.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
 
                 Text(
-                    text = "Enter credentials to load your encrypted profile session",
-                    color = Color.LightGray,
+                    text = welcomeSubMessage,
+                    color = RazorTeal,
                     fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                    modifier = Modifier.padding(top = 6.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
                 )
 
                 // Tabs for Login vs Register
@@ -22472,117 +22598,152 @@ fun CyberLoginAndSignUpScreen(
                     )
                 }
 
-                // Dynamic Multi-Layer Backend Security Indicator
-                Spacer(modifier = Modifier.height(14.dp))
-                Column(
+
+
+                // Sliding CAPTCHA Card for Zero-Bot Registration & Secure Login
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.Black.copy(alpha = 0.4f))
-                        .border(1.dp, if (isAuthenticating) RazorTeal else RazorTeal.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                        .padding(10.dp)
+                        .padding(vertical = 12.dp)
+                        .border(1.dp, if (isHumanVerified) RazorTeal.copy(0.4f) else Color.White.copy(0.1f), RoundedCornerShape(16.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0x1F110B29)),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isAuthenticating) RazorTeal else Color(0xFF00FF88))
+                            Icon(
+                                imageVector = if (isHumanVerified) Icons.Default.VerifiedUser else Icons.Default.Security,
+                                contentDescription = "Bot Protection",
+                                tint = if (isHumanVerified) RazorTeal else RazorBlue,
+                                modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = if (isAuthenticating) "FILTERING CREDENTIALS..." else "BACKEND INTEGRITY SHIELD ACTIVE",
-                                color = if (isAuthenticating) RazorTeal else Color(0xFF00FF88),
+                                text = "ANTI-BOT SECURITY SHIELD",
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp
+                                fontWeight = FontWeight.Bold,
+                                color = if (isHumanVerified) RazorTeal else Color.White.copy(0.7f),
+                                letterSpacing = 0.5.sp
                             )
                         }
                         
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
                         Text(
-                            text = if (isAuthenticating) "SCANNING" else "SECURE",
-                            color = if (isAuthenticating) RazorTeal else Color(0xFF00FF88).copy(alpha = 0.8f),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            text = if (isHumanVerified) "✅ HUMAN VERIFIED - ACCESS GRANTED" else "Slide the trigger to the right to verify you are a human user.",
+                            fontSize = 11.sp,
+                            color = if (isHumanVerified) RazorTeal else GrayText,
+                            fontWeight = FontWeight.Medium
                         )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    Text(
-                        text = if (isAuthenticating) {
-                            "Filtering injection scripts, assessing lockout limits, and packing input via secure state matching..."
-                        } else {
-                            "Verified offline-first session isolation. Inputs filter through 4 active security protection barriers."
-                        },
-                        color = Color.LightGray.copy(alpha = 0.8f),
-                        fontSize = 10.sp,
-                        lineHeight = 14.sp
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        listOf(
-                            Triple("Anti-SQLi", Icons.Default.Lock, isAuthenticating),
-                            Triple("Rate-Limit", Icons.Default.Refresh, isAuthenticating),
-                            Triple("Integrity", Icons.Default.CheckCircle, false),
-                            Triple("SHA-256", Icons.Default.VpnKey, isAuthenticating)
-                        ).forEach { (label, icon, isActive) ->
-                            val activeColor = if (isActive) RazorTeal else Color(0xFF00FF88)
-                            val containerBg = if (isActive) Color(0xFF161135) else Color(0xFF1E1E2F)
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(containerBg)
-                                    .border(0.5.dp, activeColor.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
-                                    .padding(vertical = 4.dp, horizontal = 2.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = null,
-                                        tint = activeColor,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = label,
-                                        color = Color.White,
-                                        fontSize = 7.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center,
-                                        maxLines = 1
-                                    )
-                                }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(38.dp)
+                                .clip(RoundedCornerShape(19.dp))
+                                .background(Color.Black.copy(0.4f))
+                                .border(0.5.dp, if (isHumanVerified) RazorTeal.copy(0.3f) else Color.White.copy(0.06f), RoundedCornerShape(19.dp)),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (!isHumanVerified) {
+                                Text(
+                                    text = ">>> SLIDE RIGHT >>>",
+                                    color = Color.White.copy(0.18f),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 1.sp,
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
                             }
+
+                            Slider(
+                                value = sliderValue,
+                                onValueChange = { newValue ->
+                                    if (!isHumanVerified) {
+                                        sliderValue = newValue
+                                        val currentTime = System.currentTimeMillis()
+                                        gestureLogs.add(Pair(currentTime, newValue))
+                                        
+                                        if (newValue >= 0.98f) {
+                                            val logSnapshot = gestureLogs.toList()
+                                            if (logSnapshot.size < 5) {
+                                                captchaErrorMessage = "⚠️ INTEGRITY ALERT: Instant slide detected. Bot bypass blocked!"
+                                                sliderValue = 0f
+                                                gestureLogs.clear()
+                                            } else {
+                                                val startTime = logSnapshot.first().first
+                                                val endTime = logSnapshot.last().first
+                                                val duration = endTime - startTime
+                                                
+                                                if (duration < 280) {
+                                                    captchaErrorMessage = "⚠️ TELEMETRY FAULT: Speed is sub-human (${duration}ms). Script bypass blocked!"
+                                                    sliderValue = 0f
+                                                    gestureLogs.clear()
+                                                } else if (duration > 8000) {
+                                                    captchaErrorMessage = "⚠️ SESSION EXPIRED: Interaction timed out. Please slide again."
+                                                    sliderValue = 0f
+                                                    gestureLogs.clear()
+                                                } else {
+                                                    // Calculate velocity standard deviation to check for robotic uniform motion
+                                                    val velocities = mutableListOf<Float>()
+                                                    for (i in 1 until logSnapshot.size) {
+                                                        val dt = (logSnapshot[i].first - logSnapshot[i-1].first).coerceAtLeast(1)
+                                                        val dx = logSnapshot[i].second - logSnapshot[i-1].second
+                                                        velocities.add(dx / dt.toFloat())
+                                                    }
+                                                    
+                                                    val mean = velocities.average()
+                                                    val variance = velocities.map { (it - mean) * (it - mean) }.sum() / velocities.size
+                                                    val stdDev = Math.sqrt(variance)
+                                                    
+                                                    // Standard deviation of a human slide will have dynamic variations (stdDev > 0.0)
+                                                    // Uniform scripts slide with mathematically perfect intervals and speeds (stdDev near 0.0)
+                                                    if (stdDev < 0.00003) {
+                                                        captchaErrorMessage = "⚠️ ANOMALOUS GESTURE: Perfect linear movement. Bot protection activated!"
+                                                        sliderValue = 0f
+                                                        gestureLogs.clear()
+                                                    } else {
+                                                        isHumanVerified = true
+                                                        sliderValue = 1f
+                                                        captchaErrorMessage = null
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                onValueChangeFinished = {
+                                    if (!isHumanVerified) {
+                                        sliderValue = 0f
+                                        gestureLogs.clear()
+                                    }
+                                },
+                                colors = SliderDefaults.colors(
+                                    thumbColor = if (isHumanVerified) RazorTeal else RazorBlue,
+                                    activeTrackColor = if (isHumanVerified) RazorTeal.copy(alpha = 0.4f) else RazorBlue.copy(alpha = 0.3f),
+                                    inactiveTrackColor = Color.Transparent
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp)
+                            )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Errors
                 val err = if (isLoginTab) loginErrorMessage else registerErrorMessage
-                if (err != null) {
+                val activeError = captchaErrorMessage ?: err
+                if (activeError != null) {
                     Text(
-                        text = err,
+                        text = activeError,
                         color = Color.Red,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -22595,10 +22756,15 @@ fun CyberLoginAndSignUpScreen(
                     onClick = {
                         focusManager.clearFocus()
                         keyboardController?.hide()
-                        if (isLoginTab) {
-                            onLogin(emailInput, passwordInput)
+                        if (!isHumanVerified) {
+                            captchaErrorMessage = "⚠️ PLEASE SLIDE THE ANTI-BOT SHIELD TO VERIFY SESSION SECURITY FIRST!"
                         } else {
-                            onRegister(emailInput, phoneInput, passwordInput, confirmPasswordInput)
+                            captchaErrorMessage = null
+                            if (isLoginTab) {
+                                onLogin(emailInput, passwordInput)
+                            } else {
+                                onRegister(emailInput, phoneInput, passwordInput, confirmPasswordInput)
+                            }
                         }
                     },
                     modifier = Modifier
